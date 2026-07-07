@@ -3,7 +3,7 @@ import streamlit as st
 import pandas as pd
 import datetime
 
-st.set_page_config(page_title="Generatore Listino Kaufland \U0001F1E9\U0001F1EA", layout="wide")
+st.set_page_config(page_title="Generatore Listino Kaufland 🇩🇪", layout="wide")
 st.title("🏷️idel lux_to Kaufland")
 
 # Configurazioni nazionali
@@ -88,11 +88,10 @@ if uploaded_file:
     df = pd.read_excel(uploaded_file)
     st.success("✅ File caricato con successo!")
 
-    ricarico_min = st.number_input("🔽 Ricarico minimo (%)", min_value=0.0, value=20.0)
-    ricarico_max = st.number_input("🔼 Ricarico massimo (%)", min_value=0.0, value=40.0)
+    diff_prezzo_eur = st.number_input("↔️ Differenza tra prezzo massimo e minimo (€)", min_value=0.0, value=5.0)
     stock_minimo = st.number_input("📦 Stock minimo", min_value=0, value=1)
 
-    colonne_richieste = ["Nr", "Prezzo netto", "Peso Lordo", "Volume Scatola", "Magazzino"]
+    colonne_richieste = ["Nr", "Prezzo netto", "Peso Lordo", "Volume Scatola", "Magazzino", "Prezzo Al Pubblico"]
 
     if not all(col in df.columns for col in colonne_richieste):
         st.error("❌ Il file non contiene tutte le colonne necessarie: " + ", ".join(colonne_richieste))
@@ -106,6 +105,7 @@ if uploaded_file:
                 peso_lordo = float(row["Peso Lordo"])
                 volume_m3 = float(row["Volume Scatola"])
                 count = int(row["Magazzino"])
+                prezzo_pubblico_eur = float(row["Prezzo Al Pubblico"])
 
                 if count < stock_minimo:
                     continue
@@ -114,15 +114,25 @@ if uploaded_file:
                 if spedizione is None:
                     continue
 
+                # Calcolo per l'id_offer (rimasto invariato come da richiesta)
                 prezzo_convertito = prezzo_netto * tasso_cambio
                 spedizione_convertita = spedizione * tasso_cambio
 
-                prezzo_massimo = (prezzo_convertito * (1 + ricarico_max / 100)) + spedizione_convertita
-                prezzo_minimo = (prezzo_convertito * (1 + ricarico_min / 100)) + spedizione_convertita
+                # Logica del prezzo minimo a partire da "Prezzo Al Pubblico"
+                prezzo_base_eur = prezzo_pubblico_eur
+                if 1.00 <= prezzo_base_eur <= 20.00:
+                    prezzo_base_eur += 5.00
 
+                # Conversione in valuta target
+                prezzo_minimo = prezzo_base_eur * tasso_cambio
+                
+                # Calcolo prezzo massimo (differenza anch'essa convertita in valuta)
+                prezzo_massimo = prezzo_minimo + (diff_prezzo_eur * tasso_cambio)
+
+                # Arrotondamento applicato SOLO al prezzo massimo
                 prezzo_massimo = arrotonda_psicologicamente(prezzo_massimo)
-                prezzo_minimo = arrotonda_psicologicamente(prezzo_minimo)
 
+                # Conversione in centesimi
                 price = int(round(prezzo_massimo * 100))
                 minimum_price = int(round(prezzo_minimo * 100))
 
@@ -168,13 +178,4 @@ if uploaded_file:
             csv_data = df_final.to_csv(index=False, sep=";")
 
             st.download_button(
-                label="📥 Scarica listino",
-                data=csv_data,
-                file_name=nome_file,
-                mime="text/csv"
-            )
-
-            st.success(f"✅ File generato correttamente: `{nome_file}`")
-            st.dataframe(df_final.head(20), use_container_width=True)
-        else:
-            st.warning("⚠️ Nessun prodotto valido trovato dopo i filtri.")
+                label
