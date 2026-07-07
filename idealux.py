@@ -178,4 +178,13 @@ if uploaded_file:
             csv_data = df_final.to_csv(index=False, sep=";")
 
             st.download_button(
-                label
+                label="📥 Scarica listino",
+                data=csv_data,
+                file_name=nome_file,
+                mime="text/csv"
+            )
+
+            st.success(f"✅ File generato correttamente: `{nome_file}`")
+            st.dataframe(df_final.head(20), use_container_width=True)
+        else:
+            st.warning("⚠️ Nessun prodotto valido trovato dopo i filtri.")
