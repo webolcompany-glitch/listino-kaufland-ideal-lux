@@ -88,6 +88,8 @@ if uploaded_file:
     df = pd.read_excel(uploaded_file)
     st.success("✅ File caricato con successo!")
 
+    # Nuovi parametri configurabili richiesti dall'utente
+    spedizione_fascia_eur = st.number_input("🚚 Spedizione aggiuntiva per fascia 1-20€ (€)", min_value=0.0, value=5.0)
     diff_prezzo_eur = st.number_input("↔️ Differenza tra prezzo massimo e minimo (€)", min_value=0.0, value=5.0)
     stock_minimo = st.number_input("📦 Stock minimo", min_value=0, value=1)
 
@@ -121,7 +123,7 @@ if uploaded_file:
                 # Logica del prezzo minimo a partire da "Prezzo Al Pubblico"
                 prezzo_base_eur = prezzo_pubblico_eur
                 if 1.00 <= prezzo_base_eur <= 20.00:
-                    prezzo_base_eur += 5.00
+                    prezzo_base_eur += spedizione_fascia_eur
 
                 # Conversione in valuta target
                 prezzo_minimo = prezzo_base_eur * tasso_cambio
